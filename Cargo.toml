@@ -1,0 +1,12 @@
+[package]
+name = "aoc2023"
+version = "0.0.1"
+authors = ["Julian Stecklina <js@alien8.de>"]
+edition = "2021"
+description = "Advent of Code 2023 Solutions"
+repository = "https://github.com/blitz/oac2023"
+license = "AGPL-3.0-or-later"
+
+[dependencies]
+clap = { version = "4.4.10", features = ["derive"] }
+itertools = "0.12.0"
