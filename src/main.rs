@@ -1,4 +1,4 @@
-#![warn(clippy::pedantic, clippy::cargo)]
+#![warn(clippy::pedantic)]
 
 mod day1;
 
