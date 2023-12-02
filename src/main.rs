@@ -1,6 +1,7 @@
 #![warn(clippy::pedantic)]
 
 mod day1;
+mod day2;
 
 use anyhow::{bail, Result};
 use clap::Parser;
@@ -16,12 +17,12 @@ struct Args {
 fn main() -> Result<()> {
     let args = Args::parse();
 
-    let solutions: Vec<fn() -> Result<()>> = vec![day1::solve];
+    let solutions: Vec<fn() -> Result<()>> = vec![day1::solve, day2::solve];
 
     println!("🎄 Advent of Code 2023 🎄");
 
     if let Some(day) = args.day {
-        if let Some(f) = solutions.get(usize::from(day)) {
+        if let Some(f) = solutions.get(usize::from(day - 1)) {
             println!("🎅 Running Day {} ...", day.to_string().bold());
             f()
         } else {
@@ -29,7 +30,7 @@ fn main() -> Result<()> {
         }
     } else {
         for (day, f) in solutions.into_iter().enumerate() {
-            println!("🎅 Running Day {} ...", day.to_string().bold());
+            println!("🎅 Running Day {} ...", (day + 1).to_string().bold());
             f()?;
         }
 
