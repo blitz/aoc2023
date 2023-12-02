@@ -161,7 +161,7 @@ mod testests {
                 green: 13,
                 blue: 14,
             }
-        )
+        );
     }
 
     #[test]
@@ -183,7 +183,7 @@ mod testests {
                     }
                 ]
             }
-        )
+        );
     }
 
     #[test]

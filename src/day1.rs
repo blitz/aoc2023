@@ -121,6 +121,6 @@ zoneight234
         assert_eq!(
             sum_of_calibrations_with_strings(example_input).unwrap(),
             281
-        )
+        );
     }
 }
