@@ -16,6 +16,18 @@ impl Reveal {
     fn is_superset_of(&self, other: &Self) -> bool {
         self.red >= other.red && self.green >= other.green && self.blue >= other.blue
     }
+
+    fn merge_max(&self, other: &Self) -> Self {
+        Reveal {
+            red: max(self.red, other.red),
+            green: max(self.green, other.green),
+            blue: max(self.blue, other.blue),
+        }
+    }
+
+    fn power(&self) -> u32 {
+        self.red * self.green * self.blue
+    }
 }
 
 impl FromStr for Reveal {
@@ -26,10 +38,10 @@ impl FromStr for Reveal {
         let mut green = 0;
         let mut blue = 0;
 
-        for m in s.trim().split(",") {
+        for m in s.trim().split(',') {
             let (num_str, color_str) = m
                 .trim()
-                .split_once(" ")
+                .split_once(' ')
                 .ok_or_else(|| anyhow!("No comma?"))?;
             let num = u32::from_str(num_str).context("Can't parse number")?;
 
@@ -56,11 +68,11 @@ impl FromStr for Game {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let (game_id, reveal_str) = s
-            .split_once(":")
+            .split_once(':')
             .ok_or_else(|| anyhow!("Game string doesn't contain ':'"))?;
 
         let (prefix, game_id) = game_id
-            .split_once(" ")
+            .split_once(' ')
             .ok_or_else(|| anyhow!("Couldn't split of game ID"))?;
 
         if prefix != "Game" {
@@ -68,7 +80,7 @@ impl FromStr for Game {
         }
 
         let reveals = reveal_str
-            .split(";")
+            .split(';')
             .map(Reveal::from_str)
             .collect::<Result<Vec<_>>>()?;
 
@@ -93,12 +105,35 @@ fn sum_of_possibles(total: &str, input: &str) -> Result<u32> {
         .sum())
 }
 
+fn minimal_bag(reveals: &[Reveal]) -> Reveal {
+    reveals
+        .iter()
+        .fold(Reveal::default(), |acc, val| acc.merge_max(val))
+}
+
+fn sum_power_of_input(input: &str) -> Result<u32> {
+    let games = input
+        .lines()
+        .map(Game::from_str)
+        .collect::<Result<Vec<_>>>()?;
+
+    Ok(games
+        .into_iter()
+        .map(|g| minimal_bag(&g.reveals).power())
+        .sum())
+}
+
 pub fn solve() -> Result<()> {
     println!(
         "🎁 Part 1 Solution: {}",
         sum_of_possibles("12 red, 13 green, 14 blue", DAY2_INPUT)?
             .to_string()
             .bold()
+    );
+
+    println!(
+        "🎁 Part 2 Solution: {}",
+        sum_power_of_input(DAY2_INPUT)?.to_string().bold()
     );
 
     Ok(())
@@ -152,7 +187,7 @@ mod testests {
     }
 
     #[test]
-    fn example_works() {
+    fn example1_works() {
         assert_eq!(
             sum_of_possibles(
                 "12 red, 13 green, 14 blue",
@@ -164,6 +199,21 @@ Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green"
             )
             .unwrap(),
             8
+        );
+    }
+
+    #[test]
+    fn example2_works() {
+        assert_eq!(
+            sum_power_of_input(
+                "Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green
+Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue
+Game 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red
+Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red
+Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green"
+            )
+            .unwrap(),
+            2286
         );
     }
 }
