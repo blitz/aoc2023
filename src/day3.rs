@@ -1,6 +1,3 @@
-// To allow for lpos/cpos names.
-#![warn(clippy::similar_names)]
-
 use std::{collections::BTreeSet, str::FromStr};
 
 use anyhow::{bail, Result};
