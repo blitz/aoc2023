@@ -2,6 +2,7 @@
 
 mod day1;
 mod day2;
+mod day3;
 
 use anyhow::{bail, Result};
 use clap::Parser;
@@ -17,7 +18,7 @@ struct Args {
 fn main() -> Result<()> {
     let args = Args::parse();
 
-    let solutions: Vec<fn() -> Result<()>> = vec![day1::solve, day2::solve];
+    let solutions: Vec<fn() -> Result<()>> = vec![day1::solve, day2::solve, day3::solve];
 
     println!("🎄 Advent of Code 2023 🎄");
 
