@@ -1,6 +1,7 @@
 use std::{collections::BTreeSet, str::FromStr};
 
 use anyhow::{anyhow, Context, Result};
+use itertools::Itertools;
 use regex::Regex;
 
 const DAY4_INPUT: &str = std::include_str!("day4.input");
@@ -57,6 +58,33 @@ impl Card {
     }
 }
 
+fn part2_solve(cards: &[Card]) -> Result<usize> {
+    let card_values = cards
+        .iter()
+        .sorted_by_key(|c| c.id)
+        .map(|c| c.wins())
+        .collect::<Vec<_>>();
+
+    let mut card_ids: Vec<usize> = (0..card_values.len()).collect();
+    let mut cur = 0;
+
+    // TODO There is a simpler algorithm here that should not require
+    // unbounded space if we start looking at the deck in reverse.
+    loop {
+        if cur >= card_ids.len() {
+            break;
+        }
+
+        let cur_id = card_ids[cur];
+        let new_cards = card_values[cur_id];
+
+        card_ids.extend((cur_id + 1)..(cur_id + 1 + new_cards));
+        cur = cur + 1;
+    }
+
+    Ok(card_ids.len())
+}
+
 pub fn solve() -> Result<()> {
     let cards = DAY4_INPUT
         .lines()
@@ -67,6 +95,8 @@ pub fn solve() -> Result<()> {
         "🎁 Part 1 Solution: {}",
         cards.iter().map(Card::win_points).sum::<usize>()
     );
+
+    println!("🎁 Part 2 Solution: {}", part2_solve(&cards)?);
 
     Ok(())
 }
