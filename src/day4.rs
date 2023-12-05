@@ -65,24 +65,20 @@ fn part2_solve(cards: &[Card]) -> Result<usize> {
         .map(|c| c.wins())
         .collect::<Vec<_>>();
 
-    let mut card_ids: Vec<usize> = (0..card_values.len()).collect();
-    let mut cur = 0;
+    // For each of the cards, we remember how many copies we have. We
+    // start with one of each.
+    let mut card_counts: Vec<usize> = vec![1; card_values.len()];
 
-    // TODO There is a simpler algorithm here that should not require
-    // unbounded space if we start looking at the deck in reverse.
-    loop {
-        if cur >= card_ids.len() {
-            break;
+    for pos in 0..card_values.len() {
+        let new_cards = card_values[pos];
+        let new_copies = card_counts[pos];
+
+        for c in &mut card_counts[(pos + 1)..(pos + 1 + new_cards)] {
+            *c = *c + new_copies;
         }
-
-        let cur_id = card_ids[cur];
-        let new_cards = card_values[cur_id];
-
-        card_ids.extend((cur_id + 1)..(cur_id + 1 + new_cards));
-        cur = cur + 1;
     }
 
-    Ok(card_ids.len())
+    Ok(card_counts.into_iter().sum())
 }
 
 pub fn solve() -> Result<()> {
