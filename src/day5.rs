@@ -78,6 +78,7 @@ struct Input {
 }
 
 impl Input {
+    // TODO We could translate a whole range here. This would make part 2 of the problem much more efficient.
     fn seed_to_location(&self, seed: u64) -> u64 {
         let fertilizer = self
             .soil_to_fertilizer
