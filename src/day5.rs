@@ -1,8 +1,7 @@
-use std::{collections::BTreeMap, ops::Range, str::FromStr};
+use std::{cmp::min, collections::BTreeMap, ops::Range, str::FromStr};
 
 use anyhow::{anyhow, bail, Context, Result};
 use itertools::Itertools;
-use rayon::prelude::*;
 
 const DAY5_INPUT: &str = std::include_str!("day5.input");
 
@@ -53,7 +52,8 @@ impl FromStr for MapEntry {
 struct MapEntries(Vec<MapEntry>);
 
 impl From<Vec<MapEntry>> for MapEntries {
-    fn from(value: Vec<MapEntry>) -> Self {
+    fn from(mut value: Vec<MapEntry>) -> Self {
+        value.sort_by_key(|me| me.src_range_start);
         Self(value)
     }
 }
@@ -61,6 +61,44 @@ impl From<Vec<MapEntry>> for MapEntries {
 impl MapEntries {
     fn map_value(&self, v: u64) -> u64 {
         self.0.iter().find_map(|me| me.map_value(v)).unwrap_or(v)
+    }
+
+    fn map_range(&self, r: Range<u64>) -> Range<u64> {
+        assert!(!r.is_empty());
+
+        for me in &self.0 {
+            let me_range = me.src_range();
+            assert!(!me_range.is_empty());
+
+            // r is completely before me_range
+            if r.end <= me_range.start {
+                return r;
+            }
+
+            // r ends in me_range or covers all of me_range. (Could be
+            // unified with the case above.)
+            assert!(r.end >= me_range.start);
+            if r.start < me_range.start {
+                return r.start..me_range.start;
+            }
+
+            // r starts in me_range.
+            if me_range.contains(&r.start) {
+                let me_range_offset = r.start - me_range.start;
+                let new_len = min(
+                    me_range.end - me_range.start - me_range_offset,
+                    r.end - r.start,
+                );
+                assert!(new_len != 0);
+
+                let dst_start = me.dst_range_start + me_range_offset;
+
+                return dst_start..(dst_start + new_len);
+            }
+        }
+
+        // The range doesn't intersect with any map entry.
+        r
     }
 }
 
@@ -150,13 +188,29 @@ fn find_closest_seed_location_2(input: &Input) -> Option<u64> {
         .iter()
         .copied()
         .tuples::<(u64, u64)>()
-        .filter_map(|(start, len)| {
-            eprintln!("{start} {len}");
-            (start..(start + len))
-                // XXX Bruteforce solution!
-                .into_par_iter()
-                .map(|s| input.seed_to_location(s))
-                .min()
+        .map(|(start, len)| {
+            assert!(len != 0);
+            let seed_range = start..(start + len);
+
+            let mut cur = start;
+            let mut candidate_location = u64::MAX;
+            loop {
+                let range = input
+                    .maps
+                    .iter()
+                    .fold(cur..seed_range.end, |r, map| map.map_range(r));
+
+                // We've managed to translate some
+                cur += range.end - range.start;
+
+                candidate_location = min(candidate_location, range.start);
+
+                if !seed_range.contains(&cur) {
+                    break;
+                }
+            }
+
+            candidate_location
         })
         .min()
 }
