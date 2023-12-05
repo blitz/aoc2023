@@ -68,27 +68,15 @@ impl MapEntries {
 struct Input {
     seeds: Vec<u64>,
 
-    seed_to_soil: MapEntries,
-    soil_to_fertilizer: MapEntries,
-    fertilizer_to_water: MapEntries,
-    water_to_light: MapEntries,
-    light_to_temperature: MapEntries,
-    temperature_to_humidity: MapEntries,
-    humidity_to_location: MapEntries,
+    maps: [MapEntries; 7],
 }
 
 impl Input {
     // TODO We could translate a whole range here. This would make part 2 of the problem much more efficient.
     fn seed_to_location(&self, seed: u64) -> u64 {
-        let fertilizer = self
-            .soil_to_fertilizer
-            .map_value(self.seed_to_soil.map_value(seed));
-        let water = self.fertilizer_to_water.map_value(fertilizer);
-        let light = self.water_to_light.map_value(water);
-        let temperature = self.light_to_temperature.map_value(light);
-        let humidity = self.temperature_to_humidity.map_value(temperature);
-
-        self.humidity_to_location.map_value(humidity)
+        self.maps
+            .iter()
+            .fold(seed, |value, map| map.map_value(value))
     }
 }
 
@@ -125,16 +113,12 @@ impl FromStr for Input {
         }
 
         let parse_map = |name: &str| -> MapEntries {
-            let map_entries = {
-                map.get(name)
-                    .unwrap()
-                    .iter()
-                    .map(|l| MapEntry::from_str(l).unwrap())
-                    .collect::<Vec<_>>()
-                    .into()
-            };
-            let map_entries = map_entries;
-            map_entries
+            map.get(name)
+                .unwrap()
+                .iter()
+                .map(|l| MapEntry::from_str(l).unwrap())
+                .collect::<Vec<_>>()
+                .into()
         };
 
         Ok(Input {
@@ -143,13 +127,15 @@ impl FromStr for Input {
                 .skip(1)
                 .map(|s| u64::from_str(s).context("Can't parse seed number"))
                 .collect::<Result<Vec<_>>>()?,
-            seed_to_soil: parse_map("seed-to-soil map:"),
-            soil_to_fertilizer: parse_map("soil-to-fertilizer map:"),
-            fertilizer_to_water: parse_map("fertilizer-to-water map:"),
-            water_to_light: parse_map("water-to-light map:"),
-            light_to_temperature: parse_map("light-to-temperature map:"),
-            temperature_to_humidity: parse_map("temperature-to-humidity map:"),
-            humidity_to_location: parse_map("humidity-to-location map:"),
+            maps: [
+                parse_map("seed-to-soil map:"),
+                parse_map("soil-to-fertilizer map:"),
+                parse_map("fertilizer-to-water map:"),
+                parse_map("water-to-light map:"),
+                parse_map("light-to-temperature map:"),
+                parse_map("temperature-to-humidity map:"),
+                parse_map("humidity-to-location map:"),
+            ],
         })
     }
 }

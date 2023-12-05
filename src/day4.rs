@@ -74,7 +74,7 @@ fn part2_solve(cards: &[Card]) -> Result<usize> {
         let new_copies = card_counts[pos];
 
         for c in &mut card_counts[(pos + 1)..(pos + 1 + new_cards)] {
-            *c = *c + new_copies;
+            *c += new_copies;
         }
     }
 
