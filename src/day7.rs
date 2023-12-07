@@ -80,6 +80,7 @@ impl FromStr for Hand {
     }
 }
 
+#[allow(clippy::enum_variant_names)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 enum Kind {
     HighCard,
@@ -140,20 +141,20 @@ impl Hand {
 
 impl PartialOrd for Hand {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        let self_kind = self.kind();
-        let other_kind = other.kind();
-
-        Some(match self_kind.cmp(&other_kind) {
-            Ordering::Less => Ordering::Less,
-            Ordering::Greater => Ordering::Greater,
-            Ordering::Equal => self.cards.cmp(&other.cards),
-        })
+        Some(self.cmp(other))
     }
 }
 
 impl Ord for Hand {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.partial_cmp(other).unwrap()
+        let self_kind = self.kind();
+        let other_kind = other.kind();
+
+        match self_kind.cmp(&other_kind) {
+            Ordering::Less => Ordering::Less,
+            Ordering::Greater => Ordering::Greater,
+            Ordering::Equal => self.cards.cmp(&other.cards),
+        }
     }
 }
 
@@ -182,7 +183,7 @@ impl FromStr for HandBid {
 pub fn solve() -> Result<()> {
     let input = DAY7_INPUT
         .lines()
-        .map(|l| HandBid::from_str(l))
+        .map(HandBid::from_str)
         .collect::<Result<Vec<_>>>()
         .context("Can't parse input")?;
 
@@ -196,7 +197,7 @@ pub fn solve() -> Result<()> {
             .sum::<usize>()
     );
 
-    println!("🎁 Part 2 Solution: {}", "TODO!!!");
+    println!("🎁 Part 2 Solution: TODO!");
 
     Ok(())
 }
@@ -256,7 +257,7 @@ QQQJA 483";
 
         let hand_bids = example
             .lines()
-            .map(|l| HandBid::from_str(l))
+            .map(HandBid::from_str)
             .collect::<Result<Vec<_>>>()
             .context("Can't parse hand-bid")?;
 
