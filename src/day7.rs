@@ -4,13 +4,14 @@ use std::{
 };
 
 use anyhow::{anyhow, bail, Context, Result};
-use itertools::Itertools;
+use itertools::{partition, Itertools};
 
 const DAY7_INPUT: &str = std::include_str!("day7.input");
 
 #[repr(u8)]
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 enum Card {
+    Joker,
     N2,
     N3,
     N4,
@@ -48,6 +49,16 @@ impl FromStr for Card {
             "A" => A,
             _ => bail!("Unknown card face"),
         })
+    }
+}
+
+impl Card {
+    fn j_to_toker(self) -> Self {
+        if self == Card::J {
+            Card::Joker
+        } else {
+            self
+        }
     }
 }
 
@@ -93,6 +104,12 @@ enum Kind {
 }
 
 impl Hand {
+    fn as_joker_hand(&self) -> Hand {
+        Hand {
+            cards: self.cards.map(Card::j_to_toker),
+        }
+    }
+
     fn count_card(&self, card: Card) -> usize {
         self.cards.into_iter().filter(|c| *c == card).count()
     }
@@ -104,6 +121,8 @@ impl Hand {
     }
 
     fn kind(&self) -> Kind {
+        debug_assert!(self.cards.iter().all(|c| *c != Card::Joker));
+
         let sorted_cards = self.sorted_cards();
         let card_counts = sorted_cards.map(|c| self.count_card(c));
 
@@ -137,6 +156,71 @@ impl Hand {
 
         Kind::HighCard
     }
+
+    fn kind_with_jokers(&self) -> Kind {
+        let mut cards = self.cards;
+        let split_point = partition(&mut cards, |c| *c == Card::Joker);
+        let (jokers, normal_cards) = cards.split_at_mut(split_point);
+
+        debug_assert!(normal_cards.iter().all(|c| *c != Card::Joker));
+        debug_assert!(jokers.iter().all(|c| *c == Card::Joker));
+
+        let jokers = jokers.len();
+
+        normal_cards.sort();
+
+        let mut card_counts = normal_cards
+            .iter()
+            .copied()
+            .map(|c| self.count_card(c))
+            .collect::<Vec<_>>();
+        card_counts.sort_by_key(|w| Reverse(*w));
+
+        if jokers == 5 || jokers + card_counts[0] == 5 {
+            return Kind::FiveOfAKind;
+        }
+
+        if jokers == 4 || jokers + card_counts[0] == 4 {
+            return Kind::FourOfAKind;
+        }
+
+        debug_assert!(jokers < 4);
+
+        if jokers == 3 {
+            // This will always be a Five of a Kind or Four of a Kind.
+            unreachable!();
+        }
+
+        if jokers == 2 {
+            debug_assert!(card_counts[0] <= 2);
+
+            if card_counts[0] == 2 {
+                // Four of a kind.
+                return Kind::FullHouse;
+            }
+
+            if card_counts[0] == 1 {
+                // We can match the jokers to any other card.
+                return Kind::ThreeOfAKind;
+            }
+        }
+
+        if jokers == 1 {
+            debug_assert!(card_counts[0] <= 2);
+
+            if card_counts[0] == 2 {
+                if card_counts[2] == 2 {
+                    return Kind::FullHouse;
+                } else {
+                    return Kind::ThreeOfAKind;
+                }
+            } else {
+                return Kind::OnePair;
+            }
+        }
+
+        self.kind()
+    }
 }
 
 impl PartialOrd for Hand {
@@ -147,8 +231,8 @@ impl PartialOrd for Hand {
 
 impl Ord for Hand {
     fn cmp(&self, other: &Self) -> Ordering {
-        let self_kind = self.kind();
-        let other_kind = other.kind();
+        let self_kind = self.kind_with_jokers();
+        let other_kind = other.kind_with_jokers();
 
         match self_kind.cmp(&other_kind) {
             Ordering::Less => Ordering::Less,
@@ -162,6 +246,15 @@ impl Ord for Hand {
 struct HandBid {
     hand: Hand,
     bid: u32,
+}
+
+impl HandBid {
+    fn as_joker_hand(&self) -> Self {
+        HandBid {
+            hand: self.hand.as_joker_hand(),
+            bid: self.bid,
+        }
+    }
 }
 
 impl FromStr for HandBid {
@@ -197,7 +290,16 @@ pub fn solve() -> Result<()> {
             .sum::<usize>()
     );
 
-    println!("🎁 Part 2 Solution: TODO!");
+    println!(
+        "🎁 Part 2 Solution: {}",
+        input
+            .iter()
+            .map(|hb| hb.as_joker_hand())
+            .sorted_by_key(|hb| hb.hand)
+            .enumerate()
+            .map(|(i, hb)| (i + 1) * usize::try_from(hb.bid).unwrap())
+            .sum::<usize>()
+    );
 
     Ok(())
 }
@@ -240,6 +342,34 @@ mod tests {
     }
 
     #[test]
+    fn recognizes_kind_with_jokers() -> Result<()> {
+        use Kind::*;
+
+        assert_eq!(
+            Hand::from_str("32T3K")?.as_joker_hand().kind_with_jokers(),
+            OnePair
+        );
+        assert_eq!(
+            Hand::from_str("KK677")?.as_joker_hand().kind_with_jokers(),
+            TwoPair
+        );
+        assert_eq!(
+            Hand::from_str("T55J5")?.as_joker_hand().kind_with_jokers(),
+            FourOfAKind
+        );
+        assert_eq!(
+            Hand::from_str("KTJJT")?.as_joker_hand().kind_with_jokers(),
+            FourOfAKind
+        );
+        assert_eq!(
+            Hand::from_str("QQQJA")?.as_joker_hand().kind_with_jokers(),
+            FourOfAKind
+        );
+
+        Ok(())
+    }
+
+    #[test]
     fn can_compare_hands() -> Result<()> {
         assert!(Hand::from_str("55555")? > Hand::from_str("5A555")?);
         assert!(Hand::from_str("55554")? > Hand::from_str("55553")?);
@@ -275,6 +405,39 @@ QQQJA 483";
                 .map(|(i, hb)| (i + 1) * usize::try_from(hb.bid).unwrap())
                 .sum::<usize>(),
             6440
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn example2_works() -> Result<()> {
+        let example = "32T3K 765
+T55J5 684
+KK677 28
+KTJJT 220
+QQQJA 483";
+
+        let hand_bids = example
+            .lines()
+            .map(|l| HandBid::from_str(l).map(|hb| hb.as_joker_hand()))
+            .collect::<Result<Vec<_>>>()
+            .context("Can't parse hand-bid")?;
+
+        let sorted_hand_bids = hand_bids
+            .into_iter()
+            .sorted_by_key(|hb| hb.hand)
+            .collect::<Vec<_>>();
+
+        eprintln!("{:?}", sorted_hand_bids);
+
+        assert_eq!(
+            sorted_hand_bids
+                .into_iter()
+                .enumerate()
+                .map(|(i, hb)| (i + 1) * usize::try_from(hb.bid).unwrap())
+                .sum::<usize>(),
+            5905
         );
 
         Ok(())
