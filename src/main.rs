@@ -6,6 +6,7 @@ mod day5;
 mod day6;
 mod day7;
 mod day8;
+mod day9;
 
 use anyhow::{bail, Result};
 use clap::Parser;
@@ -30,6 +31,7 @@ fn main() -> Result<()> {
         day6::solve,
         day7::solve,
         day8::solve,
+        day9::solve,
     ];
 
     println!("🎄 Advent of Code 2023 🎄");
