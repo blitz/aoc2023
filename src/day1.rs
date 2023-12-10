@@ -72,7 +72,7 @@ pub fn solve() -> Result<()> {
 }
 
 #[cfg(test)]
-mod testests {
+mod tests {
     use super::*;
 
     #[test]
