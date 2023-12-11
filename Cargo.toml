@@ -9,6 +9,7 @@ license = "AGPL-3.0-or-later"
 
 [dependencies]
 anyhow = { version = "1.0.75", features = ["backtrace"] }
+array2d = "0.3.0"
 clap = { version = "4.4.10", features = ["derive"] }
 colored = "2.0.4"
 itertools = "0.12.0"
