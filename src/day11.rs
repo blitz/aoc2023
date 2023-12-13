@@ -192,7 +192,7 @@ mod tests {
         let input = Input::from_str(input)?;
 
         eprintln!("{:?}", &input.array);
-        assert_eq!(*input.array.get(2, 0).unwrap(), true);
+        assert!(*input.array.get(2, 0).unwrap());
 
         Ok(())
     }
